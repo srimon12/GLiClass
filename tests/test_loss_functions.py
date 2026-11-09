@@ -209,3 +209,22 @@ def test_base_model_defaults_missing_focal_reduction_to_none_mode():
 
     assert loss.dim() == 0
     assert torch.isfinite(loss)
+
+
+def test_base_model_single_label_loss_uses_logits_width_when_num_labels_unset():
+    """UniEncoder sets num_labels=-1; CE must use logits.shape[-1], not view(-1, -1)."""
+    model = SimpleNamespace(
+        config=SimpleNamespace(
+            problem_type="single_label_classification",
+            contrastive_loss_coef=0,
+        ),
+        num_labels=-1,
+    )
+    logits = torch.tensor([[0.0, 1.0, 3.0], [2.0, 0.0, 0.0]])
+    labels = torch.tensor([2, 0])
+
+    loss = GLiClassBaseModel.get_loss(model, logits=logits, labels=labels)
+
+    assert torch.isfinite(loss)
+    torch.testing.assert_close(loss, torch.nn.functional.cross_entropy(logits, labels))
+

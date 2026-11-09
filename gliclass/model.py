@@ -348,7 +348,9 @@ class GLiClassBaseModel(nn.Module):  # ):
                     loss = loss_fct(logits, labels)
             elif self.config.problem_type == "single_label_classification":
                 loss_fct = nn.CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                # UniEncoder leaves self.num_labels at -1; derive C from logits like DecoderKV.
+                num_labels = logits.shape[-1]
+                loss = loss_fct(logits.view(-1, num_labels), labels.view(-1))
             elif self.config.problem_type == "multi_label_classification":
                 ignore_index = getattr(self.config, "ignore_index", -100)
                 all_losses = focal_loss_with_logits(
